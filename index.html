@@ -148,8 +148,14 @@ in.train &lt;- createDataPartition(y=training.data$classe,p=0.8,list=FALSE)
 
 training &lt;- training.data[in.train,]
 validation &lt;- training.data[-in.train,]</code></pre>
-<p>Four algorithms were employed: 1. Recursive Partitioning (rpart) 2. Random Forests 3. Linear Discriminant Analysis (LDA) 4. Quadratic Discriminant Analysis (QDA).</p>
-<p><tt>caret</tt>’s implementation of Random Forests was very slow, so the implementation of the <tt>randomForest</tt> package was employed instead. After building each model using the training set, its accuracy was checked by predicting for the validation set and computing the confusion matrix.</p>
+<p>Four algorithms were employed:</p>
+<ol style="list-style-type: decimal">
+<li>Recursive Partitioning (rpart)</li>
+<li>Random Forests</li>
+<li>Linear Discriminant Analysis (LDA)</li>
+<li>Quadratic Discriminant Analysis (QDA).</li>
+</ol>
+<p><tt>caret</tt>’s implementation of random forests was very slow, so the implementation of the <tt>randomForest</tt> package was employed instead. After building each model using the training set, its accuracy was checked by predicting for the validation set and computing the confusion matrix.</p>
 <pre class="r"><code>library(utils)
 library(kernlab)
 library(randomForest)
@@ -300,10 +306,10 @@ confusionMatrix(pred.qda.val,validation$class)</code></pre>
 ## Detection Rate         0.2740   0.1547   0.1619   0.1371   0.1649
 ## Detection Prevalence   0.2893   0.1802   0.2179   0.1420   0.1705
 ## Balanced Accuracy      0.9709   0.8841   0.9302   0.9155   0.9452</code></pre>
-<p>Random forests provided the highest accuracy: 99.6% followed by QDA: 89.2% then LDA: 70.6% and in the last place comes recursive partitioning with: 49.0%.</p>
-<div id="out-of-sample-errors" class="section level3">
-<h3>Out of Sample Errors</h3>
-<p>Random Forests had the lowest out of sample error rate since it employs the bagging technique. Recursive partitioing (classification trees) had the highest out of sample error rate since the relation between the variables cannot be simply explained by a series of binary decisions. LDA had a better rate than recursive partitioning because it tried to establish a linear formula for the independent variables. And QDA’s rate was better than that of LDA since it established a polynomial formula for the aforementioned variables.</p>
+<p>Random forests provided the highest accuracy: 99.6% followed by QDA: 89.3% then LDA: 70.0% and in the last place comes recursive partitioning with: 55.8%.</p>
+<div id="comment-on-out-of-sample-error-rates" class="section level3">
+<h3>Comment on Out of Sample Error Rates</h3>
+<p>I considered the out of sample error rate to be (1 - Accuracy). Random Forests had the lowest out of sample error rate since it employs the bagging technique. Recursive partitioing (classification trees) had the highest out of sample error rate since the relation between the variables cannot be simply explained by a series of binary decisions. LDA had a better rate than recursive partitioning because it tried to establish a linear formula for the independent variables. And QDA’s rate was better than that of LDA since it established a polynomial formula for the aforementioned variables.</p>
 </div>
 </div>
 <div id="prediction" class="section level2">
