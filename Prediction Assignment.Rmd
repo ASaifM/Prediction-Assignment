@@ -1,0 +1,124 @@
+---
+title: "Prediction Assignment"
+author: "Aya Mahfouz"
+output: html_document
+---
+
+##Executive Summary
+This report predicts the class of the person's activity based on recorded data
+of his/her motion. Different models have been built and validated with
+the training data. The most accurate model was then used to predict the possible
+class for the testing data. Random forests came out as an evident winner in 
+predicting the activity's class. It should be noted that the <tt>caret</tt>
+package was too slow in the model building phase so other packages like 
+<tt>randomForest</tt> were considered as well.
+
+
+##Getting and Cleaning Data
+In this phase the data was read and all empty strings and non-numeric values
+in numeric columns were treated as NA.
+
+```{r}
+training.data <- read.csv("pml-training.csv",na.strings = c('NA','','#DIV/0!'))
+testing.data <- read.csv("pml-testing.csv",na.strings = c('NA','','#DIV/0!'))
+```
+
+A quick inspection of both the training and testing sets showed that an easy 
+way to get rid of undesired independent columns was to check the unused columns
+in the testing set and remove them from the training and testing sets. In 
+addition, the first seven columns that contain non-numeric values were removed.
+```{r}
+remove.those.columns <- apply(testing.data, 2,
+                              function (x) sum(is.na(x)) == nrow(testing.data))
+
+training.data <- training.data[,!remove.those.columns]
+training.data <- training.data[,-c(1:7)]
+
+testing.data <- testing.data[,!remove.those.columns]
+testing.data <- testing.data[,-c(1:7)]
+```
+
+##Model Building
+The training data has been divided into testing and validation sets with a 
+ratio of 8:2 rows respectively. 
+
+
+```{r warning=FALSE, message=FALSE}
+library(caret)
+in.train <- createDataPartition(y=training.data$classe,p=0.8,list=FALSE)
+
+training <- training.data[in.train,]
+validation <- training.data[-in.train,]
+```
+
+Four algorithms were employed:
+
+1. Recursive Partitioning (rpart)
+2. Random Forests
+3. Linear Discriminant Analysis (LDA)
+4. Quadratic Discriminant Analysis (QDA).
+
+<tt>caret</tt>'s implementation of random
+forests was very slow\footnote{even with model optimizations}, so the
+implementation of the <tt>randomForest</tt> package was employed instead.
+After building each model using the training set, its accuracy was checked by
+predicting for the validation set and computing the confusion matrix.
+
+```{r cache=TRUE,warning=FALSE, message=FALSE}
+library(utils)
+library(kernlab)
+library(randomForest)
+library(rattle)
+
+set.seed(123)
+
+model.fit.rpart <- train(classe ~ .,method='rpart',data=training)
+pred.rpart.val <- predict(model.fit.rpart,newdata=validation,interval="prediction")
+
+fancyRpartPlot(model.fit.rpart$finalModel)
+confusionMatrix(pred.rpart.val,validation$classe)
+
+
+
+model.fit.rf <- randomForest(classe~., data=training, method="class")
+pred.rf.val <- predict(model.fit.rf,newdata=validation,interval="prediction")
+
+plot(model.fit.rf,main="Random Forests Error Rates")
+confusionMatrix(pred.rf.val,validation$classe)
+
+model.fit.lda <- train(classe ~ .,data=training,method="lda")
+pred.lda.val <- predict(model.fit.lda,newdata=validation,interval="prediction")
+
+confusionMatrix(pred.lda.val,validation$class)
+
+model.fit.qda <- train(classe ~ .,data=training,method="qda")
+pred.qda.val <- predict(model.fit.qda,newdata=validation,interval="prediction")
+confusionMatrix(pred.qda.val,validation$class)
+```
+
+Random forests provided the highest accuracy: 99.6% followed by QDA: 89.3% then
+LDA: 70.0% and in the last place comes recursive partitioning with: 55.8%.
+
+###Comment on Out of Sample Error Rates
+I considered the out of sample error rate to be (1 - Accuracy). Random Forests
+had the lowest out of sample error rate since it employs the
+bagging technique. Recursive partitioing (classification trees) had the highest
+out of sample error rate since the relation between the variables cannot be 
+simply explained by a series of binary decisions. LDA had a better rate than
+recursive partitioning because it tried to establish a linear formula for the
+independent variables. And QDA's rate was better than that of LDA since it
+established a polynomial formula for the aforementioned variables.
+
+##Prediction
+Since random forests provided the highest accuracy rate, it was used to predict
+the quiz answers (and they all happened to be correct).
+```{r cache=TRUE,warning=FALSE, message=FALSE}
+library(randomForest)
+pred.rf <- predict(model.fit.rf,newdata=testing.data,interval="prediction")
+pred.rf
+
+```
+
+##References
+1. Lecture Notes
+2. <a href='https://cran.r-project.org/web/views/MachineLearning.html'>CRAN Task View: Machine Learning & Statistical Learning </a>
